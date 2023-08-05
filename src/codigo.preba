@@ -1,0 +1,122 @@
+#include <Arduino.h>
+#include"sbus.h"
+//#include "FUTABA_SBUS.h"
+
+/* SBUS object, reading SBUS */
+//bfs::SbusRx sbus_rx(&Serial1);
+/* Array for storing SBUS data */
+//std::array<int16_t, bfs::SbusRx::NUM_CH()> sbus_data;
+
+TaskHandle_t LecturaRF;
+TaskHandle_t LecturaSensores;
+TaskHandle_t Motores12;
+TaskHandle_t MotoresEscobillas;
+
+/*
+void LecturaControlRF(void *arg);
+void LecturaSensoresDistancia(void *arg);
+void MovimientoMotores12(void *arg);
+void MovimientoMotoresEscobillas(void *arg);
+*/
+     /* pin task to core 0 */
+
+
+void setup() {
+  xTaskCreatePinnedToCore(
+      LecturaControlRF, 
+      "Task1",   
+      1024,     
+      NULL,      
+      1,         
+      &LecturaRF,    
+      0);
+  /*xTaskCreatePinnedToCore(
+      LecturaSensoresDistancia, 
+      "Task2",   
+      10000,     
+      NULL,      
+      1,         
+      &LecturaSensores,    
+      1);
+  xTaskCreatePinnedToCore(
+      MovimientoMotores12, 
+      "Task3",   
+      10000,     
+      NULL,      
+      2,         
+      &Motores12,    
+      0);
+  xTaskCreatePinnedToCore(
+      MovimientoMotoresEscobillas, 
+      "Task4",   
+      10000,     
+      NULL,      
+      2,         
+      &MotoresEscobillas,    
+      1);*/
+
+
+  Serial.begin(115200);
+  //while (!Serial) {}
+  /* Begin the SBUS communication */
+  //sbus_rx.Begin(9, 10, true);
+  Serial.println("Sistema iniciado");
+  delay(500);
+  Serial.println("Iniciando Control");
+  delay(500);
+
+}
+
+void LecturaControlRF(void *arg){
+  for(;;){
+    Serial.print("Task1 running on core ");
+    Serial.println(xPortGetCoreID());
+    delay(30);
+    /*if (sbus_rx.Read()) {
+      //Grab the received data 
+      sbus_data = sbus_rx.ch();
+      if(sbus_data[2]==2000){
+        Serial.println("apagado");
+        delay(1000);
+      }
+    else
+      {
+        //Display the received data 
+        for (int8_t i = 0; i < bfs::SbusRx::NUM_CH(); i++) {
+          Serial.print(sbus_data[i]);
+            Serial.print("\t");
+        }
+        //Display lost frames and failsafe data
+        Serial.print(sbus_rx.lost_frame());
+        Serial.print("\t");
+        Serial.println(sbus_rx.failsafe());
+      }
+    }*/
+  }
+}
+void LecturaSensoresDistancia(void *arg){
+  for(;;){
+    Serial.print("Task2 running on core ");
+    Serial.println(xPortGetCoreID());
+    delay(30);
+  }
+}
+void MovimientoMotores12(void *arg){
+  for(;;){
+    Serial.print("Task3 running on core ");
+    Serial.println(xPortGetCoreID());
+    delay(30);
+  }
+}
+void MovimientoMotoresEscobillas(void *arg){
+  for(;;){
+    Serial.print("Task4 running on core ");
+    Serial.println(xPortGetCoreID());
+    delay(30);
+  }
+}
+
+
+void loop() {
+  
+}
