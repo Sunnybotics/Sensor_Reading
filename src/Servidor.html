@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUNNY APP ROBOTICS</title>
+</head>
+<body>
+    <img src='robotics.jpg' alt='Robotics Image' style='width:20%'>
+    <h2>
+    <span style='color:rgb(255, 217, 0); font-size: 50px;'> Estado de</span>
+    <span style='color:rgb(255, 132, 0); font-size: 50px;'> Sensores </span>
+    </h2>
+
+    <p>Grupo 1 Sensores Activos ADELANTE: <span id="group1Count">0</span></p>
+
+    <p>Grupo 2 Sensores Activos ATRAS: <span id="group2Count">0</span></p>
+
+    <h2>FRONTAL: <span id="relayStatus" style='color:green;'>DENTRO DEL ÁREA DE TRABAJO</span></h2>
+    <img src='vector.png' alt='Vector Image' style='width:20%'>
+    <h2>TRASERA: <span id="buzzerStatus" style='color:green;'>DENTRO DEL ÁREA DE TRABAJO</span></h2>
+ 
+    <h2 id="robotState" style='color:green;'>ROBOT OPERANDO</h2>
+
+    <script>
+        function actualizarDatos() {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    var datos = JSON.parse(this.responseText);
+
+                    // Actualizar el número de sensores activos
+                    document.getElementById('group1Count').textContent = datos.group1Count;
+                    document.getElementById('group2Count').textContent = datos.group2Count;
+
+                    // Actualizar el estado del relé y el buzzer
+                    if (datos.relayStatus === "true" || datos.buzzerStatus === "true") {
+                        document.getElementById('relayStatus').textContent = "FUERA DEL ÁREA DE TRABAJO";
+                        document.getElementById('buzzerStatus').textContent = "FUERA DEL ÁREA DE TRABAJO";
+                        document.getElementById('robotState').textContent = "ROBOT DETENIDO";
+                        document.getElementById('robotState').style.color = "red";
+                    } else {
+                        document.getElementById('relayStatus').textContent = "DENTRO DEL ÁREA DE TRABAJO";
+                        document.getElementById('buzzerStatus').textContent = "DENTRO DEL ÁREA DE TRABAJO";
+                        document.getElementById('robotState').textContent = "ROBOT OPERANDO";
+                        document.getElementById('robotState').style.color = "green";
+                    }
+                }
+            };
+            xhttp.open('GET', '/datos', true);
+            xhttp.send();
+        }
+
+        // Llamar a la función para actualizar datos cada 1000ms
+        setInterval(actualizarDatos, 100);
+    </script>
+</body>
+</html>
