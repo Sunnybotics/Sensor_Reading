@@ -1,58 +1,113 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SUNNY APP ROBOTICS</title>
+    <title>Estado del Robot</title>
+    <style>
+        /* Estilos para los indicadores de color */
+        .indicator {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+            margin: 5px;
+            border-radius: 50%;
+        }
+        .green { background-color: green; }
+        .red { background-color: red; }
+        .blue { background-color: blue; }
+        /* Otros estilos */
+        .battery {
+            display: flex;
+            align-items: center;
+        }
+        .battery-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: yellow;
+            margin: 0 5px;
+        }
+    </style>
 </head>
 <body>
-    <img src='robotics.jpg' alt='Robotics Image' style='width:20%'>
-    <h2>
-    <span style='color:rgb(255, 217, 0); font-size: 50px;'> Estado de</span>
-    <span style='color:rgb(255, 132, 0); font-size: 50px;'> Sensores </span>
-    </h2>
-
-    <p>Grupo 1 Sensores Activos ADELANTE: <span id="group1Count">0</span></p>
-
-    <p>Grupo 2 Sensores Activos ATRAS: <span id="group2Count">0</span></p>
-
-    <h2>FRONTAL: <span id="relayStatus" style='color:green;'>DENTRO DEL ÁREA DE TRABAJO</span></h2>
-    <img src='vector.png' alt='Vector Image' style='width:20%'>
-    <h2>TRASERA: <span id="buzzerStatus" style='color:green;'>DENTRO DEL ÁREA DE TRABAJO</span></h2>
- 
-    <h2 id="robotState" style='color:green;'>ROBOT OPERANDO</h2>
-
+    <!-- Indicadores de color -->
+    <div class="indicator green"></div>
+    <div class="indicator green"></div>
+    <div class="indicator green"></div>
+    <div class="indicator green"></div>
+    <div class="indicator red"></div>
+    <div class="indicator red"></div>
+    <div class="indicator red"></div>
+    <div class="indicator red"></div>
+    <div class="indicator blue"></div>
+    <div class="indicator blue"></div>
+    <div class="indicator blue"></div>
+    <div class="indicator blue"></div>
+    
+    <!-- Fecha y hora -->
+    <div>
+        <p id="date-time"></p>
+    </div>
+    
+    <!-- WATER y la imagen -->
+    <div>
+        <p>WATER</p>
+        <img src="vector.png" alt="Imagen Vector">
+    </div>
+    
+    <!-- Indicadores luminosos amarillos -->
+    <div class="battery">
+        <div class="battery-indicator">1</div>
+        <div class="battery-indicator">2</div>
+        <div class="battery-indicator">3</div>
+        <div class="battery-indicator">4</div>
+        <div class="battery-indicator">5</div>
+        <div class="battery-indicator">6</div>
+        <div class="battery-indicator">7</div>
+        <div class="battery-indicator">8</div>
+        <div class="battery-indicator">9</div>
+        <div class="battery-indicator">10</div>
+    </div>
+    
+    <!-- Estado de los sensores -->
+    <div>
+        <p>Front</p>
+        <div class="indicator green"></div>
+        <div class="indicator green"></div>
+        <div class="indicator green"></div>
+        <div class="indicator green"></div>
+    </div>
+    <div>
+        <p>Back</p>
+        <div class="indicator green"></div>
+        <div class="indicator green"></div>
+        <div class="indicator green"></div>
+        <div class="indicator green"></div>
+    </div>
+    
     <script>
-        function actualizarDatos() {
-            var xhttp = new XMLHttpRequest();
-            xhttp.onreadystatechange = function() {
-                if (this.readyState == 4 && this.status == 200) {
-                    var datos = JSON.parse(this.responseText);
-
-                    // Actualizar el número de sensores activos
-                    document.getElementById('group1Count').textContent = datos.group1Count;
-                    document.getElementById('group2Count').textContent = datos.group2Count;
-
-                    // Actualizar el estado del relé y el buzzer
-                    if (datos.relayStatus === "true" || datos.buzzerStatus === "true") {
-                        document.getElementById('relayStatus').textContent = "FUERA DEL ÁREA DE TRABAJO";
-                        document.getElementById('buzzerStatus').textContent = "FUERA DEL ÁREA DE TRABAJO";
-                        document.getElementById('robotState').textContent = "ROBOT DETENIDO";
-                        document.getElementById('robotState').style.color = "red";
-                    } else {
-                        document.getElementById('relayStatus').textContent = "DENTRO DEL ÁREA DE TRABAJO";
-                        document.getElementById('buzzerStatus').textContent = "DENTRO DEL ÁREA DE TRABAJO";
-                        document.getElementById('robotState').textContent = "ROBOT OPERANDO";
-                        document.getElementById('robotState').style.color = "green";
-                    }
-                }
-            };
-            xhttp.open('GET', '/datos', true);
-            xhttp.send();
+        // JavaScript para mostrar la fecha y hora actual
+        function updateDateTime() {
+            const now = new Date();
+            const dateTimeElement = document.getElementById("date-time");
+            dateTimeElement.textContent = now.toLocaleString();
         }
 
-        // Llamar a la función para actualizar datos cada 1000ms
-        setInterval(actualizarDatos, 100);
+        // Actualizar la fecha y hora cada segundo
+        setInterval(updateDateTime, 1000);
+        
+        // Simular el encendido de los indicadores de color
+        const colorIndicators = document.querySelectorAll(".indicator");
+        let indicatorIndex = 0;
+
+        function activateNextIndicator() {
+            if (indicatorIndex < colorIndicators.length) {
+                colorIndicators[indicatorIndex].classList.add("active");
+                indicatorIndex++;
+                setTimeout(activateNextIndicator, 500); // Enciende los indicadores cada 500ms
+            }
+        }
+
+        activateNextIndicator();
     </script>
 </body>
 </html>
