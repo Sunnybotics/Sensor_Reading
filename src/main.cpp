@@ -29,9 +29,7 @@ void actualizarSensores() {
     group1Count += digitalRead(group1Pins[i]) == HIGH;
     group2Count += digitalRead(group2Pins[i]) == HIGH;
   }
-}
 
-void controlarRelesYBuzzer() {
   bool relay1Active = (group1Count >= 4);
   bool relay2Active = (group2Count >= 4);
 
@@ -43,10 +41,29 @@ void controlarRelesYBuzzer() {
   } else {
     digitalWrite(buzzer, HIGH);
   }
+  printf("datos enviados\n");
+
 }
+
+// void controlarRelesYBuzzer() {
+//   bool relay1Active = (group1Count >= 4);
+//   bool relay2Active = (group2Count >= 4);
+
+//   digitalWrite(relay1, relay1Active ? HIGH : LOW);
+//   digitalWrite(relay2, relay2Active ? LOW : HIGH);
+
+//   if (relay1Active || relay2Active) {
+//     digitalWrite(buzzer, LOW);
+//   } else {
+//     digitalWrite(buzzer, HIGH);
+//   }
+//   printf("datos enviados\n");
+// }
 
 
 void setup() {
+
+  MultitaskInit();
   Serial.begin(115200);
 
   pinMode(relay1, OUTPUT);
@@ -81,20 +98,42 @@ void setup() {
 }
 
 void loop() {
+  
+}
 
-    actualizarSensores();
-    controlarRelesYBuzzer();
+void indicaciones(void *arg) {
+  unsigned long previousMillis = 0;
+  const unsigned long indicacionesInterval = 100; // Intervalo de 100 ms para actualizar sensores
 
-  if(WiFi.status()== WL_CONNECTED){
+  for (;;) {
+    unsigned long currentMillis = millis();
+
+    if (currentMillis - previousMillis >= indicacionesInterval) {
+      actualizarSensores();
+      previousMillis = currentMillis;
+    }
+  }
+}
+
+
+void ModbusTransmission(void *arg){
+  
+  unsigned long previousMillis = 0;
+  const unsigned long modbusInterval = 1000; // Intervalo de 1000 ms para la transmisión Modbus
+
+  for(;;){
+    unsigned long currentMillis = millis();
+
+    if (currentMillis - previousMillis >= modbusInterval) {
+
+    if(WiFi.status()== WL_CONNECTED){
     HTTPClient http;
-    String datos_a_enviar = "senFrontales=" + (String)group1Count + "&senTraseros=" + (String)group2Count;
-
-    http.begin("http://192.168.0.176/Servidor/insertar/guardarDatos.php");        //Indicamos el destino
+    // String datos_a_enviar = "senFrontales=" + (String)group1Count + "&senTraseros=" + (String)group2Count;
+    String datos_a_enviar = "sen1del=" + (String)digitalRead(group1Pins[0])  + "&sen2del=" + (String)digitalRead(group1Pins[1]) + "&sen3del=" + (String)digitalRead(group1Pins[2]) + "&sen4del=" + (String)digitalRead(group1Pins[3]) + "&sen1atras=" + (String)digitalRead(group2Pins[0]) + "&sen2atras=" + (String)digitalRead(group2Pins[1]) + "&sen3atras=" + (String)digitalRead(group2Pins[2]) + "&sen4atras=" + (String)digitalRead(group2Pins[3]);
+    http.begin("http://192.168.0.173/Servidor/insertar/guardarDatos.php");        //Indicamos el destino
     http.addHeader("Content-Type", "application/x-www-form-urlencoded"); //Preparamos el header text/plain si solo vamos a enviar texto plano sin un paradigma llave:valor.
 
     int codigo_respuesta = http.POST(datos_a_enviar);
-  
-
 
 
     if(codigo_respuesta>0){
@@ -116,14 +155,13 @@ void loop() {
 
     http.end();  //libero recursos
 
-  }else{
-
-     Serial.println("Error en la conexión WIFI");
-
+        previousMillis = currentMillis;
+      } else {
+        Serial.println("Error en la conexión WIFI");
+      }
+    }
   }
-  delay(100);
 }
-
 
 
 
