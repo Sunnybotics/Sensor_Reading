@@ -5,8 +5,10 @@
 #include "system.h" // Contiene las variables del sistema
 #include "multitask.h"
 
-const char* ssid = "ROBOTICSNEXTGY";
-const char* password = "Sunnytop2022";
+
+const char* ssid = "WIFI_8K_WAFF1E2";
+// const char* ssid = "ROBOTICSNEXTGY";
+// const char* password = "Sunnytop2022";
 
 const int group1Pins[4] = {19, 18, 12, 14};
 const int group2Pins[4] = {26, 32, 33, 35};
@@ -41,7 +43,7 @@ void actualizarSensores() {
   } else {
     digitalWrite(buzzer, HIGH);
   }
-  printf("datos enviados\n");
+  //printf("datos enviados\n");
 
 }
 
@@ -81,7 +83,7 @@ void setup() {
   }
 
   WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
+  //WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -103,7 +105,7 @@ void loop() {
 
 void indicaciones(void *arg) {
   unsigned long previousMillis = 0;
-  const unsigned long indicacionesInterval = 100; // Intervalo de 100 ms para actualizar sensores
+  const unsigned long indicacionesInterval = 10; // Intervalo de 100 ms para actualizar sensores
 
   for (;;) {
     unsigned long currentMillis = millis();
@@ -130,7 +132,8 @@ void ModbusTransmission(void *arg){
     HTTPClient http;
     // String datos_a_enviar = "senFrontales=" + (String)group1Count + "&senTraseros=" + (String)group2Count;
     String datos_a_enviar = "sen1del=" + (String)digitalRead(group1Pins[0])  + "&sen2del=" + (String)digitalRead(group1Pins[1]) + "&sen3del=" + (String)digitalRead(group1Pins[2]) + "&sen4del=" + (String)digitalRead(group1Pins[3]) + "&sen1atras=" + (String)digitalRead(group2Pins[0]) + "&sen2atras=" + (String)digitalRead(group2Pins[1]) + "&sen3atras=" + (String)digitalRead(group2Pins[2]) + "&sen4atras=" + (String)digitalRead(group2Pins[3]);
-    http.begin("http://192.168.0.173/Servidor/insertar/guardarDatos.php");        //Indicamos el destino
+    //http.begin("http://192.168.0.175/Servidor/insertar/guardarDatos.php");        //Indicamos el destino- 
+    http.begin("http://192.168.209.128/Servidor/insertar/guardarDatos.php");        //Indicamos el destino IP DE LA CAMWIFI
     http.addHeader("Content-Type", "application/x-www-form-urlencoded"); //Preparamos el header text/plain si solo vamos a enviar texto plano sin un paradigma llave:valor.
 
     int codigo_respuesta = http.POST(datos_a_enviar);
