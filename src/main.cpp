@@ -6,7 +6,10 @@
 #include "multitask.h"
 
 
-const char* ssid = "WIFI_8K_WAFF1E2";
+// const char* ssid = "WIFI_8K_WAFF1E2";
+const char* ssid = "FAMILIA_RUBIO";
+const char* password = "Emilio1948";
+String csrf_token = "";
 // const char* ssid = "ROBOTICSNEXTGY";
 // const char* password = "Sunnytop2022";
 
@@ -83,7 +86,7 @@ void setup() {
   }
 
   WiFi.mode(WIFI_STA);
-  //WiFi.begin(ssid, password);
+  WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -121,20 +124,36 @@ void indicaciones(void *arg) {
 void ModbusTransmission(void *arg){
   
   unsigned long previousMillis = 0;
-  const unsigned long modbusInterval = 1000; // Intervalo de 1000 ms para la transmisión Modbus
+  const unsigned long modbusInterval = 5000; // Intervalo de 1000 ms para la transmisión Modbus
 
   for(;;){
     unsigned long currentMillis = millis();
 
     if (currentMillis - previousMillis >= modbusInterval) {
-
     if(WiFi.status()== WL_CONNECTED){
     HTTPClient http;
+    // http.begin("http://192.168.0.17:8000/get_csrf_token/");
+    // int httpCode = http.GET();
+    // if (httpCode == HTTP_CODE_OK) {
+    //   String payload = http.getString();
+    //   // Serial.println(payload);
+    //   // {"csrf_token": "79eFA7crKMH0j2Vhm55y8vTn2nWG1ZLJyrscXxrHSekUaF1MzodyaSBkA2yafyt7"}
+    //   int start = payload.indexOf('"') + 15;  // Encuentra la primera comilla y avanza
+    //   int end = payload.indexOf('"', start+1); // Encuentra la siguiente comilla desde el primer caracter
+    //   csrf_token = payload.substring(start, end);
+    //   // Serial.println(start);
+    //   // Serial.println(end);
+    //   // Serial.println(csrf_token);
+
+    // }
+    // http.end();
     // String datos_a_enviar = "senFrontales=" + (String)group1Count + "&senTraseros=" + (String)group2Count;
     String datos_a_enviar = "sen1del=" + (String)digitalRead(group1Pins[0])  + "&sen2del=" + (String)digitalRead(group1Pins[1]) + "&sen3del=" + (String)digitalRead(group1Pins[2]) + "&sen4del=" + (String)digitalRead(group1Pins[3]) + "&sen1atras=" + (String)digitalRead(group2Pins[0]) + "&sen2atras=" + (String)digitalRead(group2Pins[1]) + "&sen3atras=" + (String)digitalRead(group2Pins[2]) + "&sen4atras=" + (String)digitalRead(group2Pins[3]);
     //http.begin("http://192.168.0.175/Servidor/insertar/guardarDatos.php");        //Indicamos el destino- 
-    http.begin("http://192.168.209.128/Servidor/insertar/guardarDatos.php");        //Indicamos el destino IP DE LA CAMWIFI
+    http.begin("https://sunnyesp32.up.railway.app/add_register_esp32/");        //Indicamos el destino IP DE LA CAMWIFI
     http.addHeader("Content-Type", "application/x-www-form-urlencoded"); //Preparamos el header text/plain si solo vamos a enviar texto plano sin un paradigma llave:valor.
+    // Serial.println(csrf_token);
+    // http.addHeader("X-CSRFToken", csrf_token);  // Sustituye "EL_CSRF_TOKEN_AQUI" con el token CSRF actual
 
     int codigo_respuesta = http.POST(datos_a_enviar);
 
