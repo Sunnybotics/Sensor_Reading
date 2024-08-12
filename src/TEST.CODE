@@ -1,0 +1,135 @@
+#include <Arduino.h>
+#include "sbus.h"
+//#include "FUTABA_SBUS.h"
+
+/* SBUS object, reading SBUS */
+// bfs::SbusRx sbus_rx(&Serial1);
+
+/* Array for storing SBUS data */
+// std::array<int16_t, bfs::SbusRx::NUM_CH()> sbus_data;
+
+/* Task handles */
+TaskHandle_t RFControlTask;
+TaskHandle_t DistanceSensorsTask;
+TaskHandle_t 12VMotorsTask;
+TaskHandle_t BrushMotorsTask;
+
+/* Task function prototypes */
+/*
+void RFControlTaskFunction(void *arg);
+void DistanceSensorsTaskFunction(void *arg);
+void Motors12VTaskFunction(void *arg);
+void BrushMotorsTaskFunction(void *arg);
+*/
+
+void setup() {
+  // Create tasks pinned to specific cores
+  xTaskCreatePinnedToCore(
+      RFControlTaskFunction, 
+      "RFControlTask",   
+      1024,     
+      NULL,      
+      1,         
+      &RFControlTask,    
+      0); // Core 0
+
+  /*
+  xTaskCreatePinnedToCore(
+      DistanceSensorsTaskFunction, 
+      "DistanceSensorsTask",   
+      10000,     
+      NULL,      
+      1,         
+      &DistanceSensorsTask,    
+      1); // Core 1
+
+  xTaskCreatePinnedToCore(
+      Motors12VTaskFunction, 
+      "12VMotorsTask",   
+      10000,     
+      NULL,      
+      2,         
+      &12VMotorsTask,    
+      0); // Core 0
+
+  xTaskCreatePinnedToCore(
+      BrushMotorsTaskFunction, 
+      "BrushMotorsTask",   
+      10000,     
+      NULL,      
+      2,         
+      &BrushMotorsTask,    
+      1); // Core 1
+  */
+
+  // Initialize serial communication
+  Serial.begin(115200);
+  // Wait for serial to be ready (optional)
+  // while (!Serial) {}
+
+  /* Begin the SBUS communication */
+  // sbus_rx.Begin(9, 10, true);
+
+  Serial.println("System initialized");
+  delay(500);
+  Serial.println("Initializing Control");
+  delay(500);
+}
+
+/* Task functions */
+void RFControlTaskFunction(void *arg) {
+  for (;;) {
+    Serial.print("RFControlTask running on core ");
+    Serial.println(xPortGetCoreID());
+    delay(30);
+
+    /* 
+    if (sbus_rx.Read()) {
+      // Grab the received data 
+      sbus_data = sbus_rx.ch();
+      if (sbus_data[2] == 2000) {
+        Serial.println("Power off");
+        delay(1000);
+      } else {
+        // Display the received data 
+        for (int8_t i = 0; i < bfs::SbusRx::NUM_CH(); i++) {
+          Serial.print(sbus_data[i]);
+          Serial.print("\t");
+        }
+        // Display lost frames and failsafe data
+        Serial.print(sbus_rx.lost_frame());
+        Serial.print("\t");
+        Serial.println(sbus_rx.failsafe());
+      }
+    }
+    */
+  }
+}
+
+void DistanceSensorsTaskFunction(void *arg) {
+  for (;;) {
+    Serial.print("DistanceSensorsTask running on core ");
+    Serial.println(xPortGetCoreID());
+    delay(30);
+  }
+}
+
+void Motors12VTaskFunction(void *arg) {
+  for (;;) {
+    Serial.print("12VMotorsTask running on core ");
+    Serial.println(xPortGetCoreID());
+    delay(30);
+  }
+}
+
+void BrushMotorsTaskFunction(void *arg) {
+  for (;;) {
+    Serial.print("BrushMotorsTask running on core ");
+    Serial.println(xPortGetCoreID());
+    delay(30);
+  }
+}
+
+void loop() {
+  // The loop function runs continuously
+}
