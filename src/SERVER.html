@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Estado del Robot</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robot Status</title>
     <style>
-        /* Estilos para los indicadores de color */
+        /* Styles for color indicators */
         .indicator {
             width: 20px;
             height: 20px;
@@ -14,10 +16,12 @@
         .green { background-color: green; }
         .red { background-color: red; }
         .blue { background-color: blue; }
-        /* Otros estilos */
+
+        /* Styles for battery indicators */
         .battery {
             display: flex;
             align-items: center;
+            margin-top: 20px;
         }
         .battery-indicator {
             width: 20px;
@@ -25,36 +29,51 @@
             border-radius: 50%;
             background-color: yellow;
             margin: 0 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: black;
+            font-weight: bold;
+        }
+
+        /* Styles for sensor indicators */
+        .sensor-status {
+            margin-top: 20px;
+        }
+        .sensor-status p {
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <!-- Indicadores de color -->
-    <div class="indicator green"></div>
-    <div class="indicator green"></div>
-    <div class="indicator green"></div>
-    <div class="indicator green"></div>
-    <div class="indicator red"></div>
-    <div class="indicator red"></div>
-    <div class="indicator red"></div>
-    <div class="indicator red"></div>
-    <div class="indicator blue"></div>
-    <div class="indicator blue"></div>
-    <div class="indicator blue"></div>
-    <div class="indicator blue"></div>
-    
-    <!-- Fecha y hora -->
+    <!-- Color indicators -->
+    <div id="color-indicators">
+        <div class="indicator green"></div>
+        <div class="indicator green"></div>
+        <div class="indicator green"></div>
+        <div class="indicator green"></div>
+        <div class="indicator red"></div>
+        <div class="indicator red"></div>
+        <div class="indicator red"></div>
+        <div class="indicator red"></div>
+        <div class="indicator blue"></div>
+        <div class="indicator blue"></div>
+        <div class="indicator blue"></div>
+        <div class="indicator blue"></div>
+    </div>
+
+    <!-- Date and time -->
     <div>
         <p id="date-time"></p>
     </div>
-    
-    <!-- WATER y la imagen -->
+
+    <!-- WATER and image -->
     <div>
         <p>WATER</p>
-        <img src="vector.png" alt="Imagen Vector">
+        <img src="vector.png" alt="Vector Image">
     </div>
-    
-    <!-- Indicadores luminosos amarillos -->
+
+    <!-- Battery indicators -->
     <div class="battery">
         <div class="battery-indicator">1</div>
         <div class="battery-indicator">2</div>
@@ -67,35 +86,35 @@
         <div class="battery-indicator">9</div>
         <div class="battery-indicator">10</div>
     </div>
-    
-    <!-- Estado de los sensores -->
-    <div>
-        <p>Front</p>
+
+    <!-- Sensor status -->
+    <div class="sensor-status">
+        <p>Front Sensors</p>
         <div class="indicator green"></div>
         <div class="indicator green"></div>
         <div class="indicator green"></div>
         <div class="indicator green"></div>
     </div>
-    <div>
-        <p>Back</p>
+    <div class="sensor-status">
+        <p>Back Sensors</p>
         <div class="indicator green"></div>
         <div class="indicator green"></div>
         <div class="indicator green"></div>
         <div class="indicator green"></div>
     </div>
-    
+
     <script>
-        // JavaScript para mostrar la fecha y hora actual
+        // JavaScript to display the current date and time
         function updateDateTime() {
             const now = new Date();
             const dateTimeElement = document.getElementById("date-time");
             dateTimeElement.textContent = now.toLocaleString();
         }
 
-        // Actualizar la fecha y hora cada segundo
+        // Update the date and time every second
         setInterval(updateDateTime, 1000);
-        
-        // Simular el encendido de los indicadores de color
+
+        // Simulate activating the color indicators
         const colorIndicators = document.querySelectorAll(".indicator");
         let indicatorIndex = 0;
 
@@ -103,7 +122,7 @@
             if (indicatorIndex < colorIndicators.length) {
                 colorIndicators[indicatorIndex].classList.add("active");
                 indicatorIndex++;
-                setTimeout(activateNextIndicator, 500); // Enciende los indicadores cada 500ms
+                setTimeout(activateNextIndicator, 500); // Activate indicators every 500ms
             }
         }
 
