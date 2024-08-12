@@ -1,272 +1,195 @@
-#include <Arduino.h>
-#include <WiFi.h>
-#include <HTTPClient.h>
-#include "ws2812.h"
-#include "system.h" // Contiene las variables del sistema
-#include "multitask.h"
+#include <Arduino.h>         // Arduino core library for general functions
+#include <WiFi.h>           // Library for WiFi connectivity
+#include <HTTPClient.h>     // Library for handling HTTP requests
+#include "ws2812.h"         // Custom library for WS2812 LED control (if used)
+#include "system.h"         // Custom header file containing system variables
+#include "multitask.h"      // Custom header file for multitasking support
 
+// Network credentials
+const char* ssid = "WIFI";           // The SSID (name) of the WiFi network to connect to
+const char* password = "INNOVATION"; // The password for the WiFi network
 
-// const char* ssid = "WIFI_8K_WAFF1E2";
-const char* ssid = "FAMILIA_RUBIO";
-const char* password = "Emilio1948";
-String csrf_token = "";
-// const char* ssid = "ROBOTICSNEXTGY";
-// const char* password = "Sunnytop2022";
+// CSRF token for HTTP requests (currently unused in this code)
+String csrf_token = ""; 
 
-const int group1Pins[4] = {19, 18, 12, 14};
-const int group2Pins[4] = {26, 32, 33, 35};
+// Sensor pin definitions for two groups of sensors
+const int group1Pins[4] = {19, 18, 12, 14}; // Array of pins for the first group of sensors
+const int group2Pins[4] = {26, 32, 33, 35}; // Array of pins for the second group of sensors
 
-const int relay1 = RL1;
-const int relay2 = RL2;
-const int buzzer = BUZZER;
+// Relay and buzzer pin definitions
+const int relay1 = RL1;    // Pin connected to relay 1
+const int relay2 = RL2;    // Pin connected to relay 2
+const int buzzer = BUZZER; // Pin connected to the buzzer
 
-int group1Count = 0;
-int group2Count = 0;
+// Variables to keep track of the number of active sensors in each group
+int group1Count = 0; // Count of active sensors in group 1
+int group2Count = 0; // Count of active sensors in group 2
 
-unsigned long lastSensorUpdateTime = 0;
-const unsigned long sensorUpdateInterval = 2; // Cambiado a 10ms
+// Timing variables for sensor updates
+unsigned long lastSensorUpdateTime = 0; // Last time sensors were updated
+const unsigned long sensorUpdateInterval = 2; // Interval (in milliseconds) for updating sensors
 
-void actualizarSensores() {
-  group1Count = 0;
-  group2Count = 0;
+/**
+ * Updates the sensor readings and controls the relays and buzzer based on sensor counts.
+ * - Reads the state of each sensor in the two groups.
+ * - Activates relays if all sensors in a group are active.
+ * - Controls the buzzer based on the state of the relays.
+ */
+void updateSensors() {
+  group1Count = 0; // Reset the count for group 1 sensors
+  group2Count = 0; // Reset the count for group 2 sensors
 
+  // Iterate through each sensor pin in both groups and update the counts
   for (int i = 0; i < 4; i++) {
-    group1Count += digitalRead(group1Pins[i]) == HIGH;
-    group2Count += digitalRead(group2Pins[i]) == HIGH;
+    group1Count += digitalRead(group1Pins[i]) == HIGH; // Increment count if sensor is HIGH
+    group2Count += digitalRead(group2Pins[i]) == HIGH; // Increment count if sensor is HIGH
   }
 
-  bool relay1Active = (group1Count >= 4);
-  bool relay2Active = (group2Count >= 4);
+  // Determine if relays should be activated based on sensor counts
+  bool relay1Active = (group1Count >= 4); // Relay 1 is active if all sensors in group 1 are HIGH
+  bool relay2Active = (group2Count >= 4); // Relay 2 is active if all sensors in group 2 are HIGH
 
-  digitalWrite(relay1, relay1Active ? HIGH : LOW);
-  digitalWrite(relay2, relay2Active ? LOW : HIGH);
+  // Set relay states based on the above determination
+  digitalWrite(relay1, relay1Active ? HIGH : LOW); // Set relay 1 state
+  digitalWrite(relay2, relay2Active ? LOW : HIGH); // Set relay 2 state
 
+  // Control the buzzer based on the state of the relays
   if (relay1Active || relay2Active) {
-    digitalWrite(buzzer, LOW);
+    digitalWrite(buzzer, LOW); // Buzzer OFF if any relay is active
   } else {
-    digitalWrite(buzzer, HIGH);
+    digitalWrite(buzzer, HIGH); // Buzzer ON if no relay is active
   }
-  //printf("datos enviados\n");
-
+  
+  // Uncomment the following line for debugging purposes to indicate data transmission
+  // printf("Data sent\n");
 }
 
-// void controlarRelesYBuzzer() {
-//   bool relay1Active = (group1Count >= 4);
-//   bool relay2Active = (group2Count >= 4);
+/**
+ * Task function to periodically update sensor readings.
+ * Runs in an infinite loop, checking the time interval to update sensor data.
+ * - Calls the updateSensors function every `sensorUpdateInterval` milliseconds.
+ */
+void sensorTask(void *arg) {
+  unsigned long previousMillis = 0; // Last time the sensors were updated
+  const unsigned long sensorUpdateInterval = 10; // Interval for updating sensors in milliseconds
 
-//   digitalWrite(relay1, relay1Active ? HIGH : LOW);
-//   digitalWrite(relay2, relay2Active ? LOW : HIGH);
+  for (;;) { // Infinite loop for the task
+    unsigned long currentMillis = millis(); // Get the current time
 
-//   if (relay1Active || relay2Active) {
-//     digitalWrite(buzzer, LOW);
-//   } else {
-//     digitalWrite(buzzer, HIGH);
-//   }
-//   printf("datos enviados\n");
-// }
+    // Check if it's time to update the sensors
+    if (currentMillis - previousMillis >= sensorUpdateInterval) {
+      updateSensors(); // Update sensor readings and control relays/buzzer
+      previousMillis = currentMillis; // Update the previousMillis variable
+    }
+  }
+}
 
+/**
+ * Task function to periodically handle Modbus transmission.
+ * Runs in an infinite loop, checking the time interval to send data to the server.
+ * - Sends sensor data to a remote server via an HTTP POST request every `modbusInterval` milliseconds.
+ */
+void modbusTask(void *arg) {
+  unsigned long previousMillis = 0; // Last time data was sent to the server
+  const unsigned long modbusInterval = 5000; // Interval for sending data in milliseconds
 
+  for (;;) { // Infinite loop for the task
+    unsigned long currentMillis = millis(); // Get the current time
+
+    // Check if it's time to send data
+    if (currentMillis - previousMillis >= modbusInterval) {
+      if (WiFi.status() == WL_CONNECTED) { // Ensure WiFi is connected
+        HTTPClient http; // Create an HTTP client object
+
+        // Construct the data string to be sent
+        String dataToSend = "sen1del=" + (String)digitalRead(group1Pins[0]) + 
+                            "&sen2del=" + (String)digitalRead(group1Pins[1]) + 
+                            "&sen3del=" + (String)digitalRead(group1Pins[2]) + 
+                            "&sen4del=" + (String)digitalRead(group1Pins[3]) + 
+                            "&sen1atras=" + (String)digitalRead(group2Pins[0]) + 
+                            "&sen2atras=" + (String)digitalRead(group2Pins[1]) + 
+                            "&sen3atras=" + (String)digitalRead(group2Pins[2]) + 
+                            "&sen4atras=" + (String)digitalRead(group2Pins[3]);
+
+        // Specify the URL of the server endpoint
+        http.begin("https://sunnyesp32.up.railway.app/add_register_esp32/");
+        http.addHeader("Content-Type", "application/x-www-form-urlencoded"); // Set content type for the POST request
+
+        // Send the POST request and retrieve the response code
+        int responseCode = http.POST(dataToSend);
+
+        // Check the response code from the server
+        if (responseCode > 0) {
+          Serial.println("HTTP Response Code ► " + String(responseCode)); // Print the HTTP response code
+
+          if (responseCode == 200) { // If response code is 200 (OK)
+            String responseBody = http.getString(); // Get the response body from the server
+            Serial.println("Server Response ▼ ");
+            Serial.println(responseBody); // Print the server response
+          }
+        } else {
+          Serial.print("Error sending POST, code: ");
+          Serial.println(responseCode); // Print error code if the POST request failed
+        }
+
+        http.end(); // End the HTTP request and free resources
+        previousMillis = currentMillis; // Update the previousMillis variable
+      } else {
+        Serial.println("WiFi connection error"); // Print an error message if WiFi is not connected
+      }
+    }
+  }
+}
+
+/**
+ * Initialization function for the setup phase.
+ * Configures the hardware and establishes WiFi connection.
+ */
 void setup() {
-
+  // Initialize multitasking (assuming MultitaskInit is defined elsewhere)
   MultitaskInit();
+
+  // Initialize serial communication for debugging and information
   Serial.begin(115200);
 
+  // Configure relay and buzzer pins as output
   pinMode(relay1, OUTPUT);
-  digitalWrite(relay1, LOW);
+  digitalWrite(relay1, LOW); // Initially set relay1 to LOW
 
   pinMode(relay2, OUTPUT);
-  digitalWrite(relay2, HIGH);
+  digitalWrite(relay2, HIGH); // Initially set relay2 to HIGH
 
   pinMode(buzzer, OUTPUT);
-  digitalWrite(buzzer, HIGH);
+  digitalWrite(buzzer, HIGH); // Initially set buzzer to HIGH
 
+  // Configure sensor pins as input
   for (int i = 0; i < 4; i++) {
-    pinMode(group1Pins[i], INPUT);
-    pinMode(group2Pins[i], INPUT);
+    pinMode(group1Pins[i], INPUT); // Set each pin in group 1 as input
+    pinMode(group2Pins[i], INPUT); // Set each pin in group 2 as input
   }
 
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
+  // Initialize WiFi connection
+  WiFi.mode(WIFI_STA); // Set WiFi mode to Station (client)
+  WiFi.begin(ssid, password); // Start WiFi connection with the specified SSID and password
 
+  // Wait until WiFi is connected
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
+    delay(500); // Wait 500 milliseconds before checking again
+    Serial.print("."); // Print a dot to indicate progress
   }
 
+  // Print connection information once connected
   Serial.println("");
-  Serial.print("Conectado a ");
-  Serial.println(ssid);
-  Serial.print("Dirección IP: ");
-  Serial.println(WiFi.localIP());
-
-
+  Serial.print("Connected to ");
+  Serial.println(ssid); // Print the SSID of the connected network
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP()); // Print the local IP address assigned by the WiFi network
 }
 
+/**
+ * Main loop function (empty in this case).
+ * The loop function is left empty as tasks are handled by the multitasking system.
+ */
 void loop() {
-  
+  // The loop function is empty because multitasking handles periodic tasks
 }
-
-void indicaciones(void *arg) {
-  unsigned long previousMillis = 0;
-  const unsigned long indicacionesInterval = 10; // Intervalo de 100 ms para actualizar sensores
-
-  for (;;) {
-    unsigned long currentMillis = millis();
-
-    if (currentMillis - previousMillis >= indicacionesInterval) {
-      actualizarSensores();
-      previousMillis = currentMillis;
-    }
-  }
-}
-
-
-void ModbusTransmission(void *arg){
-  
-  unsigned long previousMillis = 0;
-  const unsigned long modbusInterval = 5000; // Intervalo de 1000 ms para la transmisión Modbus
-
-  for(;;){
-    unsigned long currentMillis = millis();
-
-    if (currentMillis - previousMillis >= modbusInterval) {
-    if(WiFi.status()== WL_CONNECTED){
-    HTTPClient http;
-    // http.begin("http://192.168.0.17:8000/get_csrf_token/");
-    // int httpCode = http.GET();
-    // if (httpCode == HTTP_CODE_OK) {
-    //   String payload = http.getString();
-    //   // Serial.println(payload);
-    //   // {"csrf_token": "79eFA7crKMH0j2Vhm55y8vTn2nWG1ZLJyrscXxrHSekUaF1MzodyaSBkA2yafyt7"}
-    //   int start = payload.indexOf('"') + 15;  // Encuentra la primera comilla y avanza
-    //   int end = payload.indexOf('"', start+1); // Encuentra la siguiente comilla desde el primer caracter
-    //   csrf_token = payload.substring(start, end);
-    //   // Serial.println(start);
-    //   // Serial.println(end);
-    //   // Serial.println(csrf_token);
-
-    // }
-    // http.end();
-    // String datos_a_enviar = "senFrontales=" + (String)group1Count + "&senTraseros=" + (String)group2Count;
-    String datos_a_enviar = "sen1del=" + (String)digitalRead(group1Pins[0])  + "&sen2del=" + (String)digitalRead(group1Pins[1]) + "&sen3del=" + (String)digitalRead(group1Pins[2]) + "&sen4del=" + (String)digitalRead(group1Pins[3]) + "&sen1atras=" + (String)digitalRead(group2Pins[0]) + "&sen2atras=" + (String)digitalRead(group2Pins[1]) + "&sen3atras=" + (String)digitalRead(group2Pins[2]) + "&sen4atras=" + (String)digitalRead(group2Pins[3]);
-    //http.begin("http://192.168.0.175/Servidor/insertar/guardarDatos.php");        //Indicamos el destino- 
-    http.begin("https://sunnyesp32.up.railway.app/add_register_esp32/");        //Indicamos el destino IP DE LA CAMWIFI
-    http.addHeader("Content-Type", "application/x-www-form-urlencoded"); //Preparamos el header text/plain si solo vamos a enviar texto plano sin un paradigma llave:valor.
-    // Serial.println(csrf_token);
-    // http.addHeader("X-CSRFToken", csrf_token);  // Sustituye "EL_CSRF_TOKEN_AQUI" con el token CSRF actual
-
-    int codigo_respuesta = http.POST(datos_a_enviar);
-
-
-    if(codigo_respuesta>0){
-      Serial.println("Código HTTP ► " + String(codigo_respuesta));   //Print return code
-
-      if(codigo_respuesta == 200){
-        String cuerpo_respuesta = http.getString();
-        Serial.println("El servidor respondió ▼ ");
-        Serial.println(cuerpo_respuesta);
-
-      }
-
-    }else{
-
-     Serial.print("Error enviando POST, código: ");
-     Serial.println(codigo_respuesta);
-
-    }
-
-    http.end();  //libero recursos
-
-        previousMillis = currentMillis;
-      } else {
-        Serial.println("Error en la conexión WIFI");
-      }
-    }
-  }
-}
-
-
-
-
-// #include <Arduino.h>
-// #include <WiFi.h>
-// #include <WebServer.h>
-// #include "ws2812.h"
-// #include "system.h" //contiene las variables del sistema
-// #include "multitask.h"
-// // Definiciones de red WiFi
-// const char* ssid = "ROBOTICSNEXTGY";
-// const char* password = "Sunnytop2022";
-// // Pines de los sensores agrupados
-// const int group1Pins[4] = {19, 18, 12, 14};  // Grupo 1, adelante
-// const int group2Pins[4] = {26, 32, 33, 35};  // Grupo 2, atras
-// // Pines del relé y el buzzer
-// const int relay1 = RL1;
-// const int buzzer = BUZZER;
-// WebServer server(80);
-// void setup() {
-//   Serial.begin(115200);
-//   // Configurar pines de relé y buzzer
-//   pinMode(relay1, OUTPUT);
-//   digitalWrite(relay1, HIGH); // Inicialmente apagado
-//   pinMode(buzzer, OUTPUT);
-//   digitalWrite(buzzer, HIGH); // Inicialmente apagado
-//   // Configurar pines de los sensores
-//   for (int i = 0; i < 4; i++) {
-//     pinMode(group1Pins[i], INPUT);
-//     pinMode(group2Pins[i], INPUT);
-//   }
-//   // Configuración de la red WiFi
-//   WiFi.mode(WIFI_STA);
-//   WiFi.begin(ssid, password);
-//   while (WiFi.status() != WL_CONNECTED) {
-//     delay(500);
-//     Serial.print(".");
-//   }
-//   Serial.println("");
-//   Serial.print("Conectado a ");
-//   Serial.println(ssid);
-//   Serial.print("Dirección IP: ");
-//   Serial.println(WiFi.localIP());
-//   // Configuración de las rutas para el servidor web
-//   server.on("/", HTTP_GET, [](){
-//     String html = "<html><body>";
-//     html += "<h1>Estado de Sensores</h1>";
-//     int group1Count = 0;
-//     int group2Count = 0;
-//     // Leer el estado de los sensores
-//     for (int i = 0; i < 4; i++) {
-//       group1Count += digitalRead(group1Pins[i]) == HIGH;
-//       group2Count += digitalRead(group2Pins[i]) == HIGH;
-//     }
-//     // Controlar el relé según el estado de los sensores
-//     bool relay1Active = (group1Count >= 4);
-//     // Controlar el Buzzer para enviar un alto cuando se active el grupo 2
-//     bool buzzerActive = (group2Count >= 4);
-//     // Mostrar estado de los sensores en la página web
-//     html += "<p>Grupo 1 Sensores Activos ADELANTE: ";
-//     html += group1Count;
-//     html += "</p>";
-//     html += "<p>Grupo 2 Sensores Activos ATRAS: ";
-//     html += group2Count;
-//     html += "</p>";
-//     // Mostrar estado del relé y el buzzer en la página web
-//     html += "<h2>FRONTAL: ";
-//     html += relay1Active ? " ROBOT DETENIDO" : " DENTRO DEL AREA DE TRABAJO";
-//     html += "</h2>";
-//     html += "<h2>TRASERA: ";
-//     html += buzzerActive ? " ROBOT DETENIDO" : " DENTRO DEL AREA DE TRABAJO";
-//     html += "</h2>";
-//     html += "</body></html>";
-//     server.send(200, "text/html", html);
-//     // Mostrar estado de los sensores en el monitor serial
-//     Serial.print("Grupo 1 Sensores Activos ADELANTE: ");
-//     Serial.println(group1Count);
-//     Serial.print("Grupo 2 Sensores Activos ATRAS: ");
-//     Serial.println(group2Count);
-//   });
-//   server.begin();
-// }
-// void loop() {
-//   server.handleClient();
-// }
